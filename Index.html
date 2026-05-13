@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محاكي ATM - NFC</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background: #f0f2f5; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+        button { width: 80%; padding: 15px; margin: 10px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .status { margin-top: 20px; font-weight: bold; color: #555; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2 id="title">نظام NFC البنكي</h2>
+    <div id="lang-sector">
+        <button class="btn-primary" onclick="setLang('ar')">العربية</button>
+        <button class="btn-primary" onclick="setLang('en')">English</button>
+    </div>
+
+    <div id="menu" style="display:none;">
+        <h3 id="welcome">مرحباً بك</h3>
+        <button class="btn-primary" onclick="startProcess('withdraw')">سحب (Withdraw)</button>
+        <button class="btn-primary" onclick="startProcess('deposit')">إيداع (Deposit)</button>
+        <button class="btn-primary" onclick="startProcess('balance')">كشف حساب (Balance)</button>
+    </div>
+
+    <div class="status" id="status">برجاء اختيار اللغة</div>
+</div>
+
+<script>
+    let currentBalance = 1000; // رصيد افتراضي لو الكارت جديد
+    let language = 'ar';
+
+    const text = {
+        ar: { title: "نظام NFC البنكي", welcome: "اختر العملية", withdraw: "سحب", deposit: "إيداع", balance: "كشف حساب", scan: "مرر الكارت الآن...", low: "إنذار: الرصيد لا يكفي!", limit: "عفواً، الحد الأقصى للإيداع 500", success: "تمت العملية بنجاح. الرصيد الحالي: " },
+        en: { title: "NFC Bank System", welcome: "Choose Operation", withdraw: "Withdraw", deposit: "Deposit", balance: "Balance Inquiry", scan: "Scan Card Now...", low: "Warning: Insufficient Funds!", limit: "Sorry, Max Deposit is 500", success: "Success. Current Balance: " }
+    };
+
+    function setLang(lang) {
+        language = lang;
+        document.getElementById('lang-sector').style.display = 'none';
+        document.getElementById('menu').style.display = 'block';
+        document.getElementById('title').innerText = text[lang].title;
+        document.getElementById('welcome').innerText = text[lang].welcome;
+        document.getElementById('status').innerText = "";
+    }
+
+    async function startProcess(action) {
+        document.getElementById('status').innerText = text[language].scan;
+
+        try {
+            const ndef = new NDEFReader();
+            await ndef.scan();
+            
+            ndef.onreading = event => {
+                // ملاحظة: في النسخة الأوفلاين، سنقوم بمحاكاة التعديل على الرصيد
+                if (action === 'balance') {
+                    alert(text[language].success + currentBalance);
+                } 
+                else if (action === 'withdraw') {
+                    let amount = prompt(language === 'ar' ? "أدخل المبلغ:" : "Enter Amount:");
+                    if (amount > currentBalance) {
+                        alert(text[language].low);
+                    } else {
+                        currentBalance -= parseInt(amount);
+                        alert(text[language].success + currentBalance);
+                    }
+                } 
+                else if (action === 'deposit') {
+                    let amount = prompt(language === 'ar' ? "أدخل المبلغ:" : "Enter Amount:");
+                    if (amount > 500) {
+                        alert(text[language].limit);
+                    } else {
+                        currentBalance += parseInt(amount);
+                        alert(text[language].success + currentBalance);
+                    }
+                }
+            };
+        } catch (error) {
+            alert("NFC Error: " + error);
+        }
+    }
+</script>
+</body>
+</html>
